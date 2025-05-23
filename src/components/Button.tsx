@@ -10,7 +10,7 @@ interface ButtonProps {
 const Button = ({ children, className, onClick }: ButtonProps) => {
     return (
         <>
-            <div className={cn("bg-slate-900 text-white py-2 px-3 rounded-lg hover:bg-slate-800", className)} onClick={onClick}>
+            <div className={cn("bg-slate-900 text-white py-2 px-3 rounded-lg hover:bg-slate-800 cursor-pointer", className)} onClick={onClick}>
                 {children}
             </div>
         </>

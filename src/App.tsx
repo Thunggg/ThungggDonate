@@ -10,6 +10,7 @@ import { formatEther } from 'ethers';
 import { MainLayout } from './layouts/MainLayout';
 import Card from './components/Card';
 import FundCard from './components/FundCard';
+import { LoaderCircle } from 'lucide-react';
 
 // 1. Get projectId
 const projectId = import.meta.env.VITE_WALLET_CONNECT_ID;
@@ -41,19 +42,28 @@ function App() {
   const [crownfundingBal, setCrownfundingBal] = useState<string | null>(null);
   const [funderLength, setFunderLength] = useState<number>(0);
   const [amountFund, setAmoundFund] = useState<number>(0);
+  const [isLoading, setLoading] = useState<boolean>(true);
+
 
   const fetchContractBalance = async () => {
-    if (walletProvider) {
-      // lấy balance của contract
-      const provider = walletProvider as Eip1193Provider;
-      const ethersProvider = new BrowserProvider(provider);
-      const contractBalance = await ethersProvider.getBalance(contracAddress);
-      setCrownfundingBal(formatEther(contractBalance));
+    setLoading(true);
+    try {
+      if (walletProvider) {
+        // lấy balance của contract
+        const provider = walletProvider as Eip1193Provider;
+        const ethersProvider = new BrowserProvider(provider);
+        const contractBalance = await ethersProvider.getBalance(contracAddress);
+        setCrownfundingBal(formatEther(contractBalance));
 
-      // lấy số người đã đóng góp
-      const contract = new Contract(contracAddress, contractABI, ethersProvider);
-      const funderLength = await contract.getFundersLength();
-      setFunderLength(funderLength);
+        // lấy số người đã đóng góp
+        const contract = new Contract(contracAddress, contractABI, ethersProvider);
+        const funderLength = await contract.getFundersLength();
+        setFunderLength(funderLength);
+      }
+    } catch (error) {
+
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -71,12 +81,32 @@ function App() {
             <div className='space-y-2 w-[30%]'>
               <Card>
                 <h2 className='text-lg'>Total amount funding</h2>
-                <span className='text-2xl font-bold'>{crownfundingBal} </span> <span>ETH</span>
+                {
+                  isLoading && (
+                    <LoaderCircle className='animate-spin' />
+                  )
+                }
+                {
+                  !isLoading && crownfundingBal && (
+                    <span className='text-2xl font-bold'>{crownfundingBal} </span>
+                  )
+                }
+                <span>ETH</span>
+
               </Card>
 
               <Card>
                 <h2 className='text-lg'>Funder</h2>
-                <span className='text-2xl font-bold'>{funderLength}</span>
+                {
+                  isLoading && (
+                    <LoaderCircle className='animate-spin' />
+                  )
+                }
+                {
+                  !isLoading && crownfundingBal && (
+                    <span className='text-2xl font-bold'>{funderLength}</span>
+                  )
+                }
               </Card>
             </div>
 
