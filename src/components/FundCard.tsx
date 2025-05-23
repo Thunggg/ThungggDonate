@@ -6,6 +6,9 @@ import { contracAddress, contractABI } from "../contract/contractData";
 import Button from "./Button";
 import { useState } from "react";
 import { LoaderCircle } from "lucide-react";
+import { shortenAddress } from "../lib/ultils";
+import type { TransactionReceipt } from "ethers";
+import type { TransactionResponse } from "ethers";
 
 interface FundCardProps {
     amountFund: number,
@@ -19,6 +22,7 @@ interface FundCardProps {
 const FundCard = ({ amountFund, setAmoundFund, walletProvider, setCrownfundingBal, setFunderLength, fetchContractBalance }: FundCardProps) => {
 
     const [isLoading, setLoading] = useState<boolean>(false);
+    const [txHash, setTxHash] = useState<string | null>(null);
 
     const onInputAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setAmoundFund(Number(e.target.value));
@@ -37,9 +41,11 @@ const FundCard = ({ amountFund, setAmoundFund, walletProvider, setCrownfundingBa
                 const ethersProvider = new BrowserProvider(provider);
                 const signer = await ethersProvider.getSigner();
                 const contract = new Contract(contracAddress, contractABI, signer);
-                const tx = await contract.fund({ value: parseEther(amountFund.toString()) });
+                const tx: TransactionResponse = await contract.fund({ value: parseEther(amountFund.toString()) });
+                setTxHash(tx.hash);
                 await tx.wait();
                 fetchContractBalance();
+
             }
         } catch (error) {
             alert("Donate thất bại rồi!");
@@ -70,10 +76,19 @@ const FundCard = ({ amountFund, setAmoundFund, walletProvider, setCrownfundingBa
             }
             {
                 isLoading && (
-                    <div className="flex items-center gap-3">
-                        <LoaderCircle className='animate-spin' />
-                        <p>Transaction đang được thực hiện</p>
-                    </div>
+                    <div>
+                        <div className="flex items-center gap-3">
+                            <LoaderCircle className='animate-spin' />
+                            <p>Transaction đang được thực hiện</p>
+                        </div>
+                        <div>
+                            {
+                                txHash && <a href={`https://sepolia.etherscan.io/tx/${txHash}`} target="_blank" className="hover:underline">
+                                    Transaction Hash: {shortenAddress(txHash)}
+                                </a>
+                            }
+                        </div>
+                    </div >
                 )
             }
 
