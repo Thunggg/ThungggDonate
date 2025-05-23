@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react'
 import './index.css'
-import { createAppKit, useAppKit, useAppKitAccount, useAppKitProvider } from "@reown/appkit/react";
+import { createAppKit, useAppKitProvider } from "@reown/appkit/react";
 import { EthersAdapter } from "@reown/appkit-adapter-ethers";
 import { sepolia } from "@reown/appkit/networks";
-import { shortenAddress } from './lib/ultils';
 import { contracAddress, contractABI } from './contract/contractData';
-import { ExternalLink } from 'lucide-react';
-import { BrowserProvider, Contract, formatUnits } from "ethers";
+import { BrowserProvider, Contract } from "ethers";
 import type { Eip1193Provider } from "ethers";
 import { formatEther } from 'ethers';
-import { parseEther } from 'ethers';
+import { MainLayout } from './layouts/MainLayout';
+import Card from './components/Card';
+import FundCard from './components/FundCard';
 
 // 1. Get projectId
 const projectId = import.meta.env.VITE_WALLET_CONNECT_ID;
@@ -37,12 +37,10 @@ createAppKit({
 });
 
 function App() {
-  const { open, close } = useAppKit();
-  const { address, isConnected, caipAddress, status, embeddedWalletInfo } = useAppKitAccount();
   const { walletProvider } = useAppKitProvider("eip155");
   const [crownfundingBal, setCrownfundingBal] = useState<string | null>(null);
-  const [funderLength, setFunderLength] = useState<number | null>(null);
-  const [amountFund, setAmoundFund] = useState<number | null>(null);
+  const [funderLength, setFunderLength] = useState<number>(0);
+  const [amountFund, setAmoundFund] = useState<number>(0);
 
   const fetchContractBalance = async () => {
     if (walletProvider) {
@@ -60,92 +58,41 @@ function App() {
   }
 
 
-  const handleFundToCrownFunding = async () => {
-    if (amountFund == null || amountFund <= 0) {
-      alert("Giá trị không hơp lệ!");
-      return;
-    }
-    if (walletProvider) {
-      // lấy balance của contract
-      const provider = walletProvider as Eip1193Provider;
-      const ethersProvider = new BrowserProvider(provider);
-      const signer = await ethersProvider.getSigner();
-      const contract = new Contract(contracAddress, contractABI, signer);
-      const tx = await contract.fund({ value: parseEther(amountFund.toString()) });
-      await tx.wait();
-      fetchContractBalance();
-    }
-  }
-
-  const onInputAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setAmoundFund(Number(e.target.value));
-  }
-
   useEffect(() => {
     fetchContractBalance();
-  }, []);
+  }, [funderLength, crownfundingBal, walletProvider]);
 
   return (
     <>
-      <header className='py-2 px-2 container mx-auto'>
-        <div className='flex justify-between items-center'>
-          <div className='flex items-center gap-2'>
-            <h1 className='text-xl font-bold'>CROWFUNDING</h1>
-            <a href={`https://sepolia.etherscan.io/address/${contracAddress}`} className='text-sm hover:bg-gray-200 p-1 rounded-lg flex items-center gap-1' target='_blank'>{shortenAddress(contracAddress)} <ExternalLink />
-            </a>
-          </div>
-          {isConnected ? (
-            <button
-              className='bg-slate-900 gap-2 text-white py-2 px-3 rounded-lg hover:bg-slate-800'
-              onClick={() => open({ view: "Account" })}
-            >
-              {shortenAddress(address, 4)}
-            </button>
-          ) : (
-            <button
-              className='bg-slate-900 text-white py-2 px-3 rounded-lg hover:bg-slate-800'
-              onClick={() => open({ view: "Connect" })}
-            >
-              Connect wallet
-            </button>
-          )}
-        </div>
+      <MainLayout>
+        <main>
+          <div className='flex justify-start items-center pt-4'>
 
-      </header>
+            <div className='space-y-2 w-[30%]'>
+              <Card>
+                <h2 className='text-lg'>Total amount funding</h2>
+                <span className='text-2xl font-bold'>{crownfundingBal} </span> <span>ETH</span>
+              </Card>
 
-      <main className='pt-4 container mx-auto px-2'>
-
-        <div className='flex justify-start items-center'>
-
-          <div className='space-y-2 w-[30%]'>
-            <div className='px-2 py-4 shadow-lg  rounded-lg'>
-              <h2 className='text-lg'>Total amount funding</h2>
-              <span className='text-2xl font-bold'>{crownfundingBal} </span> <span>ETH</span>
+              <Card>
+                <h2 className='text-lg'>Funder</h2>
+                <span className='text-2xl font-bold'>{funderLength}</span>
+              </Card>
             </div>
-            <div className='px-2 py-4 shadow-lg  rounded-lg'>
-              <h2 className='text-lg'>Funder</h2>
-              <span className='text-2xl font-bold'>{funderLength}</span>
-            </div>
-          </div>
 
 
-          <div className='w-[70%] px-2 py-4 ml-2  shadow-lg  rounded-lg'>
-            <h2 className='text-lg font-semibold'>Donate your ethers</h2>
-            <input
-              placeholder='0.0'
-              className='border p-2 rounded-lg '
-              type='number'
-              onChange={onInputAmountChange}
+            <FundCard
+              amountFund={amountFund}
+              setAmoundFund={setAmoundFund}
+              walletProvider={walletProvider}
+              setCrownfundingBal={setCrownfundingBal}
+              setFunderLength={setFunderLength}
+              fetchContractBalance={fetchContractBalance}
             />
-            <button
-              className='bg-slate-900 text-white py-2 px-3 rounded-lg hover:bg-slate-800'
-              onClick={() => handleFundToCrownFunding()}
-            >Donate</button>
+
           </div>
-        </div>
-
-
-      </main >
+        </main >
+      </MainLayout>
     </>
   );
 }
